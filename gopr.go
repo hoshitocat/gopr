@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os/exec"
 
 	"github.com/google/go-github/v28/github"
 	"golang.org/x/oauth2"
@@ -19,11 +20,19 @@ func main() {
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: *token})
 	client := github.NewClient(oauth2.NewClient(ctx, ts))
-	repos, _, err := client.Repositories.List(ctx, "", nil)
+
+	_, _, err := client.Repositories.List(ctx, "", nil)
 	if err != nil {
 		// TODO: Error handling
 		panic(err)
 	}
 
-	fmt.Println(repos)
+	originURL, err := exec.CommandContext(ctx, "git", "config", "--get", "remote.origin.url").Output()
+	if err != nil {
+		// TODO: Error handling
+		panic(err)
+	}
+	repoName := string(originURL)
+
+	fmt.Println(repoName)
 }
