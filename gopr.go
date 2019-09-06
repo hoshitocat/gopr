@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"os/exec"
 	"regexp"
+	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/google/go-github/v28/github"
 	"golang.org/x/oauth2"
 )
@@ -36,12 +37,13 @@ func main() {
 			originNames[name] = string(match[i])
 		}
 	}
-	ownerName, repoName := originNames["owner"], originNames["repo"]
+
+	ownerName, repoName := originNames["owner"], strings.Split(originNames["repo"], ".git")[0]
 	repo, _, err := client.Repositories.Get(ctx, ownerName, repoName)
 	if err != nil {
 		// TODO: Error handling
 		panic(err)
 	}
 
-	fmt.Println(repo)
+	spew.Dump(repo)
 }
