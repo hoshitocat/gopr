@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os/exec"
 	"regexp"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/google/go-github/v28/github"
 	"golang.org/x/oauth2"
 )
@@ -45,5 +45,18 @@ func main() {
 		panic(err)
 	}
 
-	spew.Dump(repo)
+	newPR := &github.NewPullRequest{
+		Title:               github.String("Release"),
+		Head:                github.String("branch_to_merge"),
+		Base:                github.String("master"),
+		Body:                github.String("This is the description of the PR created with the package `github.com/google/go-github/github`"),
+		MaintainerCanModify: github.Bool(true),
+	}
+	pr, _, err := client.PullRequests.Create(context.Background(), repo.Owner.String(), repo.GetName(), newPR)
+	if err != nil {
+		// TODO: Error handling
+		panic(err)
+	}
+
+	fmt.Printf("PR created: %s\n", pr.GetHTMLURL())
 }
