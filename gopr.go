@@ -59,4 +59,5 @@ func main() {
 	}
 
 	fmt.Printf("PR created: %s\n", pr.GetHTMLURL())
+	fmt.Println("テストブランチ")
 }
