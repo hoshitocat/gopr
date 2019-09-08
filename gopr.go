@@ -47,12 +47,12 @@ func main() {
 
 	newPR := &github.NewPullRequest{
 		Title:               github.String("Release"),
-		Head:                github.String("branch_to_merge"),
+		Head:                github.String("test-branch"),
 		Base:                github.String("master"),
 		Body:                github.String("This is the description of the PR created with the package `github.com/google/go-github/github`"),
 		MaintainerCanModify: github.Bool(true),
 	}
-	pr, _, err := client.PullRequests.Create(context.Background(), repo.Owner.String(), repo.GetName(), newPR)
+	pr, _, err := client.PullRequests.Create(context.Background(), repo.Owner.GetLogin(), repo.GetName(), newPR)
 	if err != nil {
 		// TODO: Error handling
 		panic(err)
