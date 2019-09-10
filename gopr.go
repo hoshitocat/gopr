@@ -4,8 +4,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"os/exec"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -42,6 +44,8 @@ func main() {
 	}
 
 	ownerName, repoName := originNames["owner"], strings.Split(originNames["repo"], ".git")[0]
+	// TODO: テストとして `repoName` を `dotfiles` にする
+	repoName = "dotfiles"
 	repo, _, err := client.Repositories.Get(ctx, ownerName, repoName)
 	if err != nil {
 		// TODO: Error handling
@@ -60,13 +64,35 @@ func main() {
 		Body:                github.String("This is the description of the PR created with the package `github.com/google/go-github/github`"),
 		MaintainerCanModify: github.Bool(true),
 	}
-	pr, _, err := client.PullRequests.Create(context.Background(), repo.Owner.GetLogin(), repo.GetName(), newPR)
+	fmt.Println(repo)
+	fmt.Println(newPR)
+	//pr, _, err := client.PullRequests.Create(context.Background(), repo.Owner.GetLogin(), repo.GetName(), newPR)
+	//if err != nil {
+	//	// TODO: Error handling
+	//	panic(err)
+	//}
+	//fmt.Printf("PR created: %s\n", pr.GetHTMLURL())
+	comp, _, err := client.Repositories.CompareCommits(ctx, ownerName, repoName, *base, *head)
 	if err != nil {
 		// TODO: Error handling
 		panic(err)
 	}
 
-	fmt.Printf("PR created: %s\n", pr.GetHTMLURL())
+	mergedPRMsgExp := regexp.MustCompile(`^Merge\spull\srequest\s#([0-9]+).+`)
+	var mergedPRNums []int
+	for _, c := range comp.Commits {
+		m := mergedPRMsgExp.FindSubmatch([]byte(c.GetCommit().GetMessage()))
+		if len(m) > 1 {
+			n, err := strconv.Atoi(string(m[1]))
+			if err != nil {
+				// TODO: Error handling
+				panic(err)
+			}
+			mergedPRNums = append(mergedPRNums, n)
+		}
+	}
+
+	spew.Dump(mergedPRNums)
 }
 
 func generateTitle() (string, error) {
