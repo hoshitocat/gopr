@@ -92,7 +92,14 @@ func main() {
 		}
 	}
 
-	spew.Dump(mergedPRNums)
+	for _, v := range mergedPRNums {
+		pr, _, err := client.PullRequests.Get(ctx, ownerName, repoName, v)
+		if err != nil {
+			// TODO: Error handling
+			panic(err)
+		}
+		spew.Dump(pr)
+	}
 }
 
 func generateTitle() (string, error) {
