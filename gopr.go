@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -21,17 +20,54 @@ var (
 	base  = flag.String("base", "master", "PR specify into `Base`. default: master")
 )
 
+var client *github.Client
+
+func init() {
+}
+
 func main() {
 	flag.Parse()
-
 	ctx := context.Background()
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: *token})
-	client := github.NewClient(oauth2.NewClient(ctx, ts))
 
-	originURL, err := exec.CommandContext(ctx, "git", "config", "--get", "remote.origin.url").Output()
+	client = github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: *token})))
+
+	owner, repo, err := getCurrentRepo(ctx)
 	if err != nil {
 		// TODO: Error handling
 		panic(err)
+	}
+
+	title, err := generateTitle()
+	if err != nil {
+		// TODO: Error handling
+		panic(err)
+	}
+
+	body, err := generateBody(ctx, owner, repo)
+	if err != nil {
+		// TODO: Error handling
+		panic(err)
+	}
+
+	pr, _, err := client.PullRequests.Create(ctx, owner, repo, &github.NewPullRequest{
+		Title:               github.String(title),
+		Head:                github.String(*head),
+		Base:                github.String(*base),
+		Body:                github.String(body),
+		MaintainerCanModify: github.Bool(true),
+	})
+	if err != nil {
+		// TODO: Error handling
+		panic(err)
+	}
+	fmt.Printf("PR created: %s\n", pr.GetHTMLURL())
+
+}
+
+func getCurrentRepo(ctx context.Context) (owner string, repo string, err error) {
+	originURL, err := exec.CommandContext(ctx, "git", "config", "--get", "remote.origin.url").Output()
+	if err != nil {
+		return "", "", err
 	}
 
 	exp := regexp.MustCompile(`git@github\.com:(?P<owner>.+)/(?P<repo>.+)`)
@@ -43,39 +79,16 @@ func main() {
 		}
 	}
 
-	ownerName, repoName := originNames["owner"], strings.Split(originNames["repo"], ".git")[0]
+	owner, repo = originNames["owner"], strings.Split(originNames["repo"], ".git")[0]
 	// TODO: テストとして `repoName` を `dotfiles` にする
-	repoName = "dotfiles"
-	repo, _, err := client.Repositories.Get(ctx, ownerName, repoName)
-	if err != nil {
-		// TODO: Error handling
-		panic(err)
-	}
+	repo = "dotfiles"
+	return owner, repo, nil
+}
 
-	title, err := generateTitle()
+func generateBody(ctx context.Context, owner, repo string) (string, error) {
+	comp, _, err := client.Repositories.CompareCommits(ctx, owner, repo, *base, *head)
 	if err != nil {
-		// TODO: Error handling
-		panic(err)
-	}
-	newPR := &github.NewPullRequest{
-		Title:               github.String(title),
-		Head:                github.String(*head),
-		Base:                github.String(*base),
-		Body:                github.String("This is the description of the PR created with the package `github.com/google/go-github/github`"),
-		MaintainerCanModify: github.Bool(true),
-	}
-	fmt.Println(repo)
-	fmt.Println(newPR)
-	//pr, _, err := client.PullRequests.Create(context.Background(), repo.Owner.GetLogin(), repo.GetName(), newPR)
-	//if err != nil {
-	//	// TODO: Error handling
-	//	panic(err)
-	//}
-	//fmt.Printf("PR created: %s\n", pr.GetHTMLURL())
-	comp, _, err := client.Repositories.CompareCommits(ctx, ownerName, repoName, *base, *head)
-	if err != nil {
-		// TODO: Error handling
-		panic(err)
+		return "", err
 	}
 
 	mergedPRMsgExp := regexp.MustCompile(`^Merge\spull\srequest\s#([0-9]+).+`)
@@ -85,21 +98,23 @@ func main() {
 		if len(m) > 1 {
 			n, err := strconv.Atoi(string(m[1]))
 			if err != nil {
-				// TODO: Error handling
-				panic(err)
+				return "", err
 			}
 			mergedPRNums = append(mergedPRNums, n)
 		}
 	}
 
+	var body string
 	for _, v := range mergedPRNums {
-		pr, _, err := client.PullRequests.Get(ctx, ownerName, repoName, v)
+		pr, _, err := client.PullRequests.Get(ctx, owner, repo, v)
 		if err != nil {
 			// TODO: Error handling
 			panic(err)
 		}
-		spew.Dump(pr)
+		body += fmt.Sprintf("- [ ] [#%d](%s) %s created by @%s\n", v, pr.GetHTMLURL(), pr.GetTitle(), pr.GetUser().GetLogin())
 	}
+
+	return body, nil
 }
 
 func generateTitle() (string, error) {
