@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
+	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -33,8 +35,8 @@ func main() {
 
 	owner, repo, err := getCurrentRepo(ctx)
 	if err != nil {
-		// TODO: Error handling
-		panic(err)
+		fmt.Printf("gopr: %+v\n", err.Error())
+		os.Exit(1)
 	}
 
 	title, err := generateTitle()
@@ -61,13 +63,12 @@ func main() {
 		panic(err)
 	}
 	fmt.Printf("PR created: %s\n", pr.GetHTMLURL())
-
 }
 
 func getCurrentRepo(ctx context.Context) (owner string, repo string, err error) {
 	originURL, err := exec.CommandContext(ctx, "git", "config", "--get", "remote.origin.url").Output()
-	if err != nil {
-		return "", "", err
+	if err != nil || len(originURL) == 0 {
+		return "", "", errors.New("could not get current git repository origin URL")
 	}
 
 	exp := regexp.MustCompile(`git@github\.com:(?P<owner>.+)/(?P<repo>.+)`)
