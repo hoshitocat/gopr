@@ -41,14 +41,14 @@ func main() {
 
 	title, err := generateTitle()
 	if err != nil {
-		// TODO: Error handling
-		panic(err)
+		fmt.Printf("gopr: %+v\n", err.Error())
+		os.Exit(1)
 	}
 
 	body, err := generateBody(ctx, owner, repo)
 	if err != nil {
-		// TODO: Error handling
-		panic(err)
+		fmt.Printf("gopr: %+v\n", err.Error())
+		os.Exit(1)
 	}
 
 	pr, _, err := client.PullRequests.Create(ctx, owner, repo, &github.NewPullRequest{
@@ -59,8 +59,8 @@ func main() {
 		MaintainerCanModify: github.Bool(true),
 	})
 	if err != nil {
-		// TODO: Error handling
-		panic(err)
+		fmt.Printf("gopr: %+v\n", err.Error())
+		os.Exit(1)
 	}
 	fmt.Printf("PR created: %s\n", pr.GetHTMLURL())
 }
@@ -89,7 +89,7 @@ func getCurrentRepo(ctx context.Context) (owner string, repo string, err error) 
 func generateBody(ctx context.Context, owner, repo string) (string, error) {
 	comp, _, err := client.Repositories.CompareCommits(ctx, owner, repo, *base, *head)
 	if err != nil {
-		return "", err
+		return "", errors.New(fmt.Sprintf("could not genereate PR body: %+v", err))
 	}
 
 	mergedPRMsgExp := regexp.MustCompile(`^Merge\spull\srequest\s#([0-9]+).+`)
@@ -99,7 +99,7 @@ func generateBody(ctx context.Context, owner, repo string) (string, error) {
 		if len(m) > 1 {
 			n, err := strconv.Atoi(string(m[1]))
 			if err != nil {
-				return "", err
+				return "", errors.New(fmt.Sprintf("could not genereate PR body: %+v", err))
 			}
 			mergedPRNums = append(mergedPRNums, n)
 		}
@@ -109,8 +109,7 @@ func generateBody(ctx context.Context, owner, repo string) (string, error) {
 	for _, v := range mergedPRNums {
 		pr, _, err := client.PullRequests.Get(ctx, owner, repo, v)
 		if err != nil {
-			// TODO: Error handling
-			panic(err)
+			return "", errors.New(fmt.Sprintf("could not genereate PR body: %+v", err))
 		}
 		body += fmt.Sprintf("- [ ] [#%d](%s) %s created by @%s\n", v, pr.GetHTMLURL(), pr.GetTitle(), pr.GetUser().GetLogin())
 	}
