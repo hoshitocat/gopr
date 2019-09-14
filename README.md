@@ -7,13 +7,13 @@ Draw inspiration from git-pr-release.
 go get hoshitocat/gopr
 ```
 
-...TODO
-
 ## Usage
 
 ```
-gopr
+gopr -token={{ Your Github API Token }} -base={{ Base repository }} -head={{ Head repository }}
 ```
 
-...TODO
+-base args default value is `master`
+
+-head args default value is `develop`
 
