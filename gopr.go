@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"regexp"
@@ -119,5 +120,10 @@ func generateBody(ctx context.Context, owner, repo string) (string, error) {
 
 func generateTitle() (string, error) {
 	today := time.Now().Format("2006-01-02")
-	return fmt.Sprintf("Release %s", today), nil
+
+	content, err := ioutil.ReadFile(".github/TITLE_TEMPLATE.md")
+	if err != nil {
+		return "", errors.New(fmt.Sprintf("could not generate PR title: %+v", err))
+	}
+	return fmt.Sprintf(string(content), today), nil
 }
