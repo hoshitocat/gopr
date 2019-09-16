@@ -119,11 +119,18 @@ func generateBody(ctx context.Context, owner, repo string) (string, error) {
 }
 
 func generateTitle() (string, error) {
-	today := time.Now().Format("2006-01-02")
+	year := time.Now().Format("2006")
+	month := time.Now().Format("01")
+	day := time.Now().Format("02")
 
 	content, err := ioutil.ReadFile(".github/TITLE_TEMPLATE.md")
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("could not generate PR title: %+v", err))
 	}
-	return fmt.Sprintf(string(content), today), nil
+
+	str := strings.TrimRight(string(content), "\n")
+	title := strings.ReplaceAll(str, "%Y", year)
+	title = strings.ReplaceAll(title, "%m", month)
+	title = strings.ReplaceAll(title, "%d", day)
+	return title, nil
 }
