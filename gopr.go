@@ -119,9 +119,11 @@ func generateBody(ctx context.Context, owner, repo string) (string, error) {
 }
 
 func generateTitle() (string, error) {
-	year := time.Now().Format("2006")
-	month := time.Now().Format("01")
-	day := time.Now().Format("02")
+	t := time.Now()
+	year := t.Format("2006")
+	month := t.Format("01")
+	day := t.Format("02")
+	weekDayName := t.Format("Mon")
 
 	content, err := ioutil.ReadFile(".github/TITLE_TEMPLATE.md")
 	if err != nil {
@@ -132,5 +134,6 @@ func generateTitle() (string, error) {
 	title := strings.ReplaceAll(str, "%Y", year)
 	title = strings.ReplaceAll(title, "%m", month)
 	title = strings.ReplaceAll(title, "%d", day)
+	title = strings.ReplaceAll(title, "%a", weekDayName)
 	return title, nil
 }
