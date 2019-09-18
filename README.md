@@ -4,7 +4,7 @@ Draw inspiration from git-pr-release.
 ## Installation
 
 ```shell
-go get hoshitocat/gopr
+go get github.com/hoshitocat/gopr
 ```
 
 ## Usage
