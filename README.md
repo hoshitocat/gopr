@@ -13,6 +13,8 @@ go get github.com/hoshitocat/gopr
 gopr -token={{ Your Github API Token }} -base={{ Base repository }} -head={{ Head repository }}
 ```
 
+-token you must pass this argument
+
 -base args default value is `master`
 
 -head args default value is `develop`
