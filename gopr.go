@@ -82,8 +82,6 @@ func getCurrentRepo(ctx context.Context) (owner string, repo string, err error) 
 	}
 
 	owner, repo = originNames["owner"], strings.Split(originNames["repo"], ".git")[0]
-	// TODO: テストとして `repoName` を `dotfiles` にする
-	repo = "dotfiles"
 	return owner, repo, nil
 }
 
